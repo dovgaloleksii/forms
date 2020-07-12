@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+
+  api:
+    container_name: api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - main
+    image: formsapi
+    command: ["sh", "-c", "uvicorn main:app"]
+    volumes:
+      - /code
+    restart: always
+
+  db:
+    image: postgres:alpine
+    container_name: db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - 5433:5432
+    networks:
+      - main
+    restart: always
+
+  # Load initial data db:
+  # Download or create new dump
+  # pg_dump --username=<username> --port=<port> --host=<host> --dbname=<db_name> > /var/lib/postgresql/data/dumps
+  # - Download dump from current server
+  # docker cp ./<dump_name> <container_name>:/var/lib/postgresql/data/dumps
+  # docker exec -ti <container_name> bash
+  # pg_restore -U forms -d forms /var/lib/postgresql/data/dumps
+  # psql -U forms -d forms < /var/lib/postgresql/data/dumps
+
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 10000:8080
+
+networks:
+  main:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  static_volume:
+    driver: local
